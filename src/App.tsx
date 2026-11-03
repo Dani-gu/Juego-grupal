@@ -1,122 +1,137 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, Text } from "@react-three/drei";
+import { useRef, useState } from "react";
+import type { Mesh } from "three";
 
+import Jugador from "./components/Jugador";
+import Obstaculo from "./components/Obstaculo";
+import Marcador from "./components/Marcador";
+
+import "./App.css";
+
+function Zona({
+  x,
+  color,
+  letra
+}: {
+  x: number;
+  color: string;
+  letra: string;
+}) {
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <group position={[x, 0, 0]}>
+      <mesh position={[0, 0.05, 0]}>
+        <cylinderGeometry args={[1, 1, 0.1, 32]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <Text position={[0, 1.5, 0]} fontSize={0.8} color="white">
+        {letra}
+      </Text>
+    </group>
+  );
 }
 
-export default App
+function App() {
+  const [muertes, setMuertes] = useState(0);
+  const [vidas, setVidas] = useState(3);
+  const [victoria, setVictoria] = useState(false);
+  const [reinicio, setReinicio] = useState(0);
+
+  const obstaculos = useRef<(Mesh | null)[]>([]);
+
+  const terminado = victoria || vidas === 0;
+
+  const chocar = () => {
+    setMuertes((m) => m + 1);
+    setVidas((v) => Math.max(0, v - 1));
+    setReinicio((r) => r + 1);
+  };
+
+  const ganar = () => {
+    setVictoria(true);
+  };
+
+  const reiniciarJuego = () => {
+    setMuertes(0);
+    setVidas(3);
+    setVictoria(false);
+    setReinicio((r) => r + 1);
+  };
+
+  return (
+    <div className="juego">
+
+      <Marcador
+        muertes={muertes}
+        vidas={vidas}
+        victoria={victoria}
+        reiniciar={reiniciarJuego}
+      />
+
+      <Canvas camera={{ position: [0, 15, 18], fov: 50 }}>
+
+        <ambientLight intensity={1.5} />
+
+        <directionalLight
+          position={[5, 10, 5]}
+          intensity={2}
+        />
+
+        {/* Pista */}
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[22, 10]} />
+          <meshStandardMaterial color="#355e3b" />
+        </mesh>
+
+        {/* Inicio y meta */}
+        <Zona x={-8} color="limegreen" letra="A" />
+        <Zona x={8} color="dodgerblue" letra="B" />
+
+        {/* Jugador */}
+        <Jugador
+          obstaculos={obstaculos}
+          onChoque={chocar}
+          onVictoria={ganar}
+          reinicio={reinicio}
+          terminado={terminado}
+        />
+
+        {/* Obstáculos */}
+        <Obstaculo
+          x={-3}
+          velocidad={1.5}
+          indice={0}
+          referencias={obstaculos}
+          detenido={terminado}
+        />
+
+        <Obstaculo
+          x={0}
+          velocidad={2}
+          indice={1}
+          referencias={obstaculos}
+          detenido={terminado}
+        />
+
+        <Obstaculo
+          x={3}
+          velocidad={2.5}
+          indice={2}
+          referencias={obstaculos}
+          detenido={terminado}
+        />
+
+        <OrbitControls
+          enablePan={false}
+          minDistance={10}
+          maxDistance={35}
+        />
+
+      </Canvas>
+    </div>
+  );
+}
+
+export default App;
