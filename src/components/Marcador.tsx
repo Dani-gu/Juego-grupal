@@ -14,10 +14,10 @@ export default function Marcador({
 }: Props) {
   return (
     <div className="marcador">
-      <h2>🦅 MISIÓN CÓNDOR</h2>
-      <p>💀 Muertes: {muertes}</p>
-      <p>❤️ Vidas: {vidas}</p>
-      <p>🎮 Movimiento: WASD o flechas</p>
+      <h2>MISIÓN CÓNDOR</h2>
+      <p>Muertes: {muertes}</p>
+      <p>Vidas: {vidas}</p>
+      <p>Movimiento: W A S D o flechas</p>
 
       {victoria && (
         <h2 className="victoria">¡VICTORIA!</h2>
